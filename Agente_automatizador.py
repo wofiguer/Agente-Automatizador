@@ -108,38 +108,7 @@ async def procesar_mensaje_whatsapp(datos: MensajeEntrada):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# =====================================================================
-# 4. SISTEMA DE PRUEBAS INTERNAS EN MEMORIA (In-Memory Execution)
-# =====================================================================
-print("--- INICIANDO SIMULACIONES EN MEMORIA SIN ERRORES DE RED ---")
-cliente_test = TestClient(app)
-
-# CASO 1: Alejandro consultando Psicología (con tildes)
-prueba_alejandro = {
-    "id_whatsapp": "+50255559988",
-    "nombre_paciente": "Alejandro",
-    "mensaje": "Hola, ando buscando un psicólogo para el martes por la tarde y quería saber el precio.",
-    "historial_contexto": ""
-}
-
-# CASO 2: María reportando una Urgencia Crítica
-prueba_maria = {
-    "id_whatsapp": "+50244441122",
-    "nombre_paciente": "María",
-    "mensaje": "¡Ayuda! Mi abuelo tiene un dolor muy fuerte en el pecho y le cuesta respirar",
-    "historial_contexto": ""
-}
-
-# Ejecutamos Caso 1
-res_normal = cliente_test.post("/webhook/whatsapp", json=prueba_alejandro)
-print("\n[¡ÉXITO TOTAL!] Escenario A (Buscador del Excel Inteligente):")
-print(f"Mapeo de número celular: {res_normal.json()['responder_a']}")
-print(f"Texto enviado:\n{res_normal.json()['mensaje_salida']}\n")
-print("=" * 70)
-
-# Ejecutamos Caso 2
-res_urgente = cliente_test.post("/webhook/whatsapp", json=prueba_maria)
-print("\n[¡ÉXITO TOTAL!] Escenario B (Triage de Alerta Médica):")
-print(f"Mapeo de número celular: {res_urgente.json()['responder_a']}")
-print(f"Texto enviado:\n{res_urgente.json()['mensaje_salida']}")
+if __name__ == "__main__":
+    import uvicorn
+    # Arranca el servidor local o de producción en el puerto por defecto
+    uvicorn.run(app, host="0.0.0.0", port=8000)
