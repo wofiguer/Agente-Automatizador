@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Agente de Automatización para Consultorios Médicos (Core MVP)
-Versión de Simulación Gratuita - Ejecutor In-Memory 100% Estable para Colab
+Versión de Simulación Gratuita - Despliegue Exclusivo y Limpio para Render
 """
 
 import unicodedata
 from fastapi import FastAPI, HTTPException
-from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
 # =====================================================================
@@ -108,6 +107,7 @@ async def procesar_mensaje_whatsapp(datos: MensajeEntrada):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     # Arranca el servidor local o de producción en el puerto por defecto
