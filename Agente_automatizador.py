@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Agente de Automatización para Consultorios Médicos (Core MVP)
-Versión de Simulación Gratuita - Despliegue Exclusivo y Limpio para Render
+Versión de Simulación Gratuita - Con Buscador Tolerante a Errores Ortográficos
 """
 
 import unicodedata
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# =====================================================================
-# 1. CONFIGURACIÓN DEL ENGINE Y ESQUEMAS
-# =====================================================================
 app = FastAPI(title="Core Agente Médico - Producción Local")
 
 class MensajeEntrada(BaseModel):
@@ -37,32 +34,42 @@ def normalizar_texto(texto: str) -> str:
     return texto_limpio.lower()
 
 # =====================================================================
-# 2. LOGICA DEL BUSCADOR INTELIGENTE (EXCEL)
+# 2. LOGICA DEL BUSCADOR INTELIGENTE TOLERANTE A ERRORES (FUZZY SIMULATION)
 # =====================================================================
 def consultar_agenda_disponible(mensaje_paciente: str) -> tuple:
     msg = normalizar_texto(mensaje_paciente)
     coincidencias = []
     tipo = "general"
 
-    if "dentista" in msg or "odontologia" in msg or "muela" in msg or "diente" in msg:
+    # Diccionario de raíces y variaciones ortográficas comunes
+    es_dental = any(x in msg for x in ["dent", "odont", "muel", "dient", "endo", "exod", "limpiez", "resina"])
+    es_cardio = any(x in msg for x in ["card", "coraz", "presion", "tension"])
+    es_interna = any(x in msg for x in ["intern", "gener", "medicin", "chequeo", "doctor"])
+    es_vet = any(x in msg for x in ["vet", "perr", "gat", "mascot", "animal", "cachorr"])
+    es_nutri = any(x in msg for x in ["nutr", "diet", "peso", "calori", "gord", "flac"])
+    es_psico = any(x in msg for x in ["psico", "terap", "ansied", "depre", "psicolo"])
+    es_psiquia = any(x in msg for x in ["psiquia", "esquiz", "medicam"])
+
+    # Ruteo basado en proximidad de términos
+    if es_dental:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "dentista" in normalizar_texto(m["especialidad"])]
-        tipo = "Dentista"
-    elif "cardio" in msg or "corazon" in msg:
+        tipo = "Dentista / Endodoncia"
+    elif es_cardio:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "cardiologo" in normalizar_texto(m["especialidad"])]
         tipo = "Cardiólogo"
-    elif "internista" in msg or "general" in msg or "medico" in msg:
+    elif es_interna:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "internista" in normalizar_texto(m["especialidad"])]
         tipo = "Médico Internista"
-    elif "veterinaria" in msg or "perro" in msg or "gato" in msg or "mascota" in msg:
+    elif es_vet:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "veterinaria" in normalizar_texto(m["especialidad"])]
         tipo = "Veterinaria"
-    elif "nutri" in msg or "dieta" in msg or "peso" in msg:
+    elif es_nutri:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "nutricionista" in normalizar_texto(m["especialidad"])]
         tipo = "Nutricionista"
-    elif "psicologo" in msg or "terapia" in msg or "psicologia" in msg:
+    elif es_psico:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "psicologo" in normalizar_texto(m["especialidad"])]
         tipo = "Psicólogo"
-    elif "psiquiatra" in msg or "ansiedad" in msg:
+    elif es_psiquia:
         coincidencias = [m for m in BASE_DATOS_MEDICOS if "psiquiatra" in normalizar_texto(m["especialidad"])]
         tipo = "Psiquiatra"
 
@@ -71,7 +78,7 @@ def consultar_agenda_disponible(mensaje_paciente: str) -> tuple:
 
     resultado_texto = f" Con mucho gusto te comparto las opciones para la especialidad de {tipo}:\n"
     for med in coincidencias:
-        resultado_texto += f"- {med['nombre']}: {med['dias']} en horario {med['horario']}. Tarifa: ${med['tarifa']}\n"
+        resultado_texto += f"- {med['nombre']} ({med['especialidad']}): {med['dias']} en horario {med['horario']}. Tarifa: ${med['tarifa']}\n"
     
     return resultado_texto, True
 
@@ -83,7 +90,6 @@ async def procesar_mensaje_whatsapp(datos: MensajeEntrada):
     try:
         msg = normalizar_texto(datos.mensaje)
         
-        # Validación prioritaria de Triage de Emergencias Médicas
         if "infarto" in msg or "pecho" in msg or "sangrando" in msg or "urgencia" in msg or "accidente" in msg:
             respuesta_agente = (
                 f"¡Hola {datos.nombre_paciente}! Detectamos síntomas de alerta crítica en tu mensaje. "
@@ -110,5 +116,4 @@ async def procesar_mensaje_whatsapp(datos: MensajeEntrada):
 
 if __name__ == "__main__":
     import uvicorn
-    # Arranca el servidor local o de producción en el puerto por defecto
     uvicorn.run(app, host="0.0.0.0", port=8000)
